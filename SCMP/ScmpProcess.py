@@ -8,12 +8,17 @@ def getDates(driver,startDate):
     rowcount = "Max"
     driver.find_element(By.CSS_SELECTOR,".ui-datepicker-trigger").click()
     driver.find_elements(By.CSS_SELECTOR,".ui-datepicker-menu li")[0].click()
+
+    cyear="2024"
+    if startDate is None or startDate == "None" or len(startDate) < 1:
+        arr = startDate.split("-")
+        cyear=arr[0]
     while not str(driver.find_elements(By.CSS_SELECTOR,".ui-datepicker-month")[0].text).strip() == "January":
         moveleft(driver)
 
     # change this to every year
     while not (str(driver.find_elements(By.CSS_SELECTOR,".ui-datepicker-month")[1].text).strip() == "December" and str(
-            driver.find_elements(By.CSS_SELECTOR,".ui-datepicker-year")[0].text).strip() == "2023"):
+            driver.find_elements(By.CSS_SELECTOR,".ui-datepicker-year")[0].text).strip() == cyear):
         moveright(driver)
         moveright(driver)
         # time.sleep(1)
@@ -41,8 +46,9 @@ def getDates(driver,startDate):
                         arr[2]=arr[2].split(" ")[0]
                         arr2 = cdat.split(",")
 
-
-                        if int(arr2[0])>=int(arr[0]) and int(arr2[1])>=int(arr[1]) and int(arr2[2])>=int(arr[2]):
+                        # print(2, cdat, startDate, int(arr[0]) >= int(arr2[0]), int(arr[1]) >= int(arr2[1]),
+                        #       int(arr[2]) >= int(arr2[2]), int(arr[2]), int(arr2[2]))
+                        if int(arr2[0])>int(arr[0]) or (int(arr2[0])==int(arr[0]) and int(arr2[1])>int(arr[1]) )  or ( int(arr2[0])==int(arr[0]) and int(arr2[1])==int(arr[1]) and int(arr2[2])>=int(arr[2]) ):
 
                             # print(2, cdat, startDate,int(arr[0])>=int(arr2[0]),int(arr[1])>=int(arr2[1]),int(arr[2])>=int(arr2[2]),int(arr[2]),int(arr2[2]))
                             GAMEDATES.append(cdat)

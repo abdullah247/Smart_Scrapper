@@ -325,7 +325,7 @@ border-radius: 10px;
                 <string>Settings</string>
                </property>
                <property name="icon">
-                <iconset resource="D:/Icons.qrc/icons.qrc">
+                <iconset>
                  <normaloff>:/icons/settings.svg</normaloff>:/icons/settings.svg</iconset>
                </property>
                <property name="iconSize">
@@ -354,7 +354,7 @@ border-radius: 10px;
                 <string>Quit</string>
                </property>
                <property name="icon">
-                <iconset resource="D:/Icons.qrc/icons.qrc">
+                <iconset>
                  <normaloff>:/icons/x.svg</normaloff>:/icons/x.svg</iconset>
                </property>
                <property name="iconSize">
@@ -619,7 +619,7 @@ border-radius: 10px;
                  <item>
                   <widget class="QPushButton" name="hkBarrerResultButton">
                    <property name="text">
-                    <string>Barrer Result</string>
+                    <string>Barrier Results</string>
                    </property>
                   </widget>
                  </item>
@@ -696,7 +696,7 @@ border-radius: 10px;
                   <widget class="QLineEdit" name="url">
                    <property name="font">
                     <font>
-                     <family>MS Sans Serif</family>
+                     <family>MS Reference Specialty</family>
                      <pointsize>11</pointsize>
                     </font>
                    </property>
@@ -713,31 +713,56 @@ border-radius: 10px;
             <widget class="QWidget" name="TurfClubPage">
              <layout class="QHBoxLayout" name="horizontalLayout_9">
               <item>
-               <widget class="QPushButton" name="turfHandicapButton">
-                <property name="text">
-                 <string>Turf Handicap</string>
+               <widget class="QFrame" name="frame_6">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
                 </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="turfHtmlSolverButton">
-                <property name="text">
-                 <string>Turf Html Solver</string>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
                 </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="turfScrapperButton">
-                <property name="text">
-                 <string>Turf Scrapper</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="turfPopulateClassButton">
-                <property name="text">
-                 <string>Turf PopulateClass</string>
-                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_11">
+                 <item>
+                  <widget class="QLineEdit" name="handicapHorseTurf">
+                   <property name="font">
+                    <font>
+                     <family>MS Sans Serif</family>
+                     <pointsize>11</pointsize>
+                    </font>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="turfHandicapButton">
+                   <property name="text">
+                    <string>Turf Handicap</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="turfHtmlSolverButton">
+                   <property name="text">
+                    <string>Turf Html Solver</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="turfScrapperButton">
+                   <property name="text">
+                    <string>Turf Scrapper</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="turfPopulateClassButton">
+                   <property name="text">
+                    <string>Turf PopulateClass</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </item>
              </layout>

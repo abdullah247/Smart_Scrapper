@@ -81,9 +81,9 @@ def getAllHorseDetails(s,date,raceNo,sheet,userag,flag=True):
     if flag:
         date = date.replace("\n", "").strip()
         course = getCourse(getPage(s, date, userag))
-        url = f"https://racing.hkjc.com/racing/information/English/Racing/LocalResults.aspx?RaceDate={date}&Racecourse={course}&RaceNo={raceNo}"
+        url = f"https://racing.hkjc.com/racing/information/English/Racing/LocalResults.aspx?RaceDate={date}&Racecourse={course}&RaceNo={raceNo +1}"
     else:
-        url=date.replace("RaceNo=1",f"RaceNo={raceNo}")
+        url=date.replace("RaceNo=1",f"RaceNo={raceNo+1}")
         # getRaceCourse
         smallurl=url.lower()
         course=smallurl.split("racecourse=")[1].split("&raceno=")[0].strip()
@@ -195,8 +195,8 @@ def getAllHorseDetails(s,date,raceNo,sheet,userag,flag=True):
             link=""
             try:
                 link="https://racing.hkjc.com/" + tr.find_all("td")[2].find("a")["href"]
-            except :
-
+            except Exception as e :
+                print(f"Gear Address Error {e}")
                 pass
             result.append(race)
 
@@ -225,7 +225,8 @@ def getAllHorseDetails(s,date,raceNo,sheet,userag,flag=True):
 
 
             # rtg
-            result.append(rtg)
+            # result.append(rtg)
+            result.append("")
 
 
             #trainer

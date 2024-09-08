@@ -11,6 +11,7 @@ from HongKong.FixGear import hkFixGear
 from HongKong.Main_HandiCap_Populate import hkHandiCap
 from HongKong.Main_Populate_Class import HkPopulateClass
 from HongKong.New_Html_Solver_For_Latest import HkHtmlSolver
+from HongKong.addRtg import FixRtg
 from HongKong.customApi import ScrapLatest
 from SCMP.SCMP_PawTime import getSCMPPAWTIME
 from SCMP.ScmpScrapper import SCARP_SCMP
@@ -99,6 +100,7 @@ class UI(QMainWindow):
         self.hkHandicapButton.clicked.connect(self.hkHandicapFunction)
         self.hkScrapperButton.clicked.connect(self.hkScrapperFunction)
         self.hkPopulateClassButton.clicked.connect(self.hkPopulateClassFunction)
+        # self.hkFixRtgButton.clicked.connect(self.hkFixRtgButtonFunction)
         self.hkHtmlSolverButton.clicked.connect(self.hkHtmlSolverFunction)
 
         self.show()
@@ -169,6 +171,17 @@ class UI(QMainWindow):
             print(e)
         pass
 
+    # def hkFixRtgButtonFunction(self):
+    #     try:
+    #         add = GetHK()
+    #         if len(add) > 0 and os.path.exists(add):
+    #             FixRtg(add, USERARG)
+    #         else:
+    #             QMessageBox.about(self, 'Finished', f"Error {add} not found")
+    #         QMessageBox.about(self, 'Finished', 'Completed Execution !')
+    #     except Exception as e:
+    #         print(e)
+    #     pass
 
 
     def hkHtmlSolverFunction(self):
@@ -190,7 +203,7 @@ class UI(QMainWindow):
         try:
             add=GetTC()
             if len(add)>0 and os.path.exists(add):
-                TURFHANDICAP(add,USERARG)
+                TURFHANDICAP(add,USERARG,self.handicapHorseTurf.text())
             else:
                 QMessageBox.about(self, 'Finished', f"Error {add} not found")
             QMessageBox.about(self, 'Finished', 'Completed Execution !')

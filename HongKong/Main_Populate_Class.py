@@ -11,39 +11,190 @@ trackStart={
     "hv":16,
     "awt":28
 }
-
-def getrate(cl,toCourse,dist,track,flag=False):
-    # print(cl,toCourse,dist)
+HVDISTANCE=[1000,1200,1650,1800,2200]
+AWTDISTANCE=[1200, 1650, 1800, 2000, 2200, 2400]
+STDISTANCE=[1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
+def filterDistance(ff:str):
     try:
-        dist =int(str(dist).replace("M","").replace(".0",""))
-        mclass = str(cl).lower().strip().replace(" ", "").replace(".0","")
-        st = trackStart[toCourse] - 1
+        return int(ff.lower().replace(".0","").replace("m","").strip())
+    except Exception as e:
+        print("Distance Filter error",e)
+        return None
 
-        trak = -1
-        for i in range(2, len(track[0]), 3):
-            # print(st,i,track, str(trackVariance.cell((st - 2), i).value).replace(" ","").strip().lower(), mclass, trackVariance.cell(st, i).value)
-            val = track[st - 2][i]
-            ssss="|" + str(mclass) + "|"
-            if ssss  in str(val).replace(" ", "").strip().lower()   or  ssss  == str(val).replace(" ", "").strip().lower():
-                trak = i
+
+
+def find_closest_value(firstArray, secondArray, target_value):
+    # Find common values present in both AWT and ST
+    common_values = list(set(firstArray) & set(secondArray))
+
+    # If no common values are found, return None
+    if not common_values:
+        return None
+
+    # Find the closest value to the target_value
+    closest_value = min(common_values, key=lambda x: abs(x - target_value))
+
+    return closest_value
+
+
+def AddTime(SpeedTime,timeVal,flag):
+    try:
+        timeVal=float(timeVal)
+        SpeedTime=str(SpeedTime)
+        fval=SpeedTime[0]
+        tim =float(SpeedTime[2:])
+        if flag:
+            tim=tim +timeVal
+        else:
+            tim=tim-timeVal
+
+        if tim >60:
+            tim =tim % 60
+            fval=str(int(SpeedTime[0])+1)
+        elif tim<0:
+            tim = tim % 60
+            fval = str(int(SpeedTime[0]) - 1)
+        return fval +"." + "{:05.2f}".format(tim)
+    except Exception as e:
+        print("Add Time Error",e,SpeedTime,timeVal)
+    pass
+
+
+def getCoresspondingValue(currentSheet, SpeedTime, fromdist,todist,column):
+    row = 1
+    try:
+        if int(fromdist)<int(todist):
+            flag=True
+        else:
+            flag=False
+
+        TopRow = currentSheet[0]
+        currentDistance = filterDistance(str(TopRow[column]))
+        while currentDistance != todist:
+            if flag:
+                column = column + 3
+                SpeedTime= AddTime(SpeedTime,currentSheet[0][column+1],flag)
+            else:
+                column = column - 3
+                SpeedTime = AddTime(SpeedTime, currentSheet[0][column + 1], flag)
+            currentDistance = filterDistance(str(TopRow[column]))
+
+        if currentDistance == todist:
+            row = 1
+
+            orginalspeedTime = float(SpeedTime[::-1].replace('.', '', 1)[::-1])
+            cval = currentSheet[row][column - 1]
+            cval=float(cval[::-1].replace('.', '', 1)[::-1])
+            while row < len(currentSheet) and cval < orginalspeedTime:
+                row = row + 1
+                cval = currentSheet[row][column - 1]
+                if currentSheet[row][column - 1] is None:
+                    return currentSheet[row-1][column]
+                cval = float(cval[::-1].replace('.', '', 1)[::-1])
+
+            if cval == orginalspeedTime:
+                return currentSheet[row][column]
+            else:
+                previousVal=currentSheet[row-1][column]
+                previousVal = float(previousVal[::-1].replace('.', '', 1)[::-1])
+                if abs(previousVal - orginalspeedTime) < abs(cval -orginalspeedTime):
+                    return currentSheet[row - 1][column]
+                else:
+                    return currentSheet[row + 1][column]
+
+    except Exception as e:
+        print("Corresspondance Error",e,SpeedTime,row,column)
+    pass
+
+
+def getrate(currentSheet,fromdist,todist,FinalRating):
+    try:
+
+        if fromdist == todist : return FinalRating
+        column=1
+        row = 1
+        TopRow=currentSheet[0]
+        currentDistance = filterDistance(str(TopRow[column]))
+        while int(currentDistance) <= int(fromdist) :
+
+            # should only run if condition below is true
+            if currentDistance ==fromdist:
+                row=1
+                while row <  len(currentSheet) and not currentSheet[row][column] is None and int(currentSheet[row][column]) >int(FinalRating):
+                    row=row+1
+
+                    if row>len(currentSheet) or  currentSheet[row][column] is None:
+                        row =row-1
+                        break
+
+
+                if row<len(currentSheet):
+                    if row>1 and ((currentSheet[row-1][column] -FinalRating) < (FinalRating - currentSheet[row-1][column] )):
+                        return getCoresspondingValue(currentSheet, currentSheet[row-1][column - 1], todist, fromdist,column)
+                    else:
+                        return getCoresspondingValue(currentSheet,currentSheet[row][column-1],fromdist,todist,column)
+
+            column=column+3
+            currentDistance = filterDistance(str(TopRow[column]))
+            if column>len(TopRow):
                 break
 
-        for i in range(0, 75):
-            # if not flag:
-            #     if int(float(track[st + i][2])) == int(dist):
-            #         return track[st + i][trak]
-            # else:
-            if str(track[st + i][1]) == "None":
-                return 0
-            elif int(float(track[st + i][1])) >= int(float(dist)):
-                # print(cl, toCourse, dist , track[st + i][trak])
-                return track[st + i][trak+1]
+
     except Exception as e:
-        print("Track Error" ,e)
+        print("Track Error" ,e,str(currentDistance),str(fromdist),str(currentSheet[row][column]))
         return 0
 
 
-def getMAtch(toclass, todist, toCourse, fromClass, fromdist, fromCourse, res, track, row1, row3):
+def getTrackPars(trackPar, courseConversion, todist, cl,value:float):
+
+    try:
+        if cl is None or todist is None:
+            return  value
+
+
+        column=2
+        cl="|" + str(cl) +"|"
+        jump =5
+        clas=str(trackPar[1][column]).lower().replace(".0", "").replace("r","").strip()
+        while not cl in clas and column <len(trackPar[1]) :
+            column=jump+column
+            clas = str(trackPar[1][column]).replace(".0", "").replace("r", "").strip().lower()
+
+        row=3
+        currentCourse=str(trackPar[row][0]).strip()
+
+        if cl in clas:
+            while currentCourse != courseConversion and row<len(trackPar):
+                row=row+1
+                currentCourse = str(trackPar[row][0]).strip()
+
+            if currentCourse == courseConversion:
+                if trackPar[row][column + 4] is None: trackPar[row][column + 4] = 0
+                if trackPar[row][1] is None: trackPar[row][column + 4] = 0
+                currentdist=int(str(trackPar[row][1]).lower().replace(".0", "").replace("m","").strip())
+                while currentdist != int(todist) and row<len(trackPar):
+                    currentdist = int(str(trackPar[row][1]).lower().replace(".0", "").replace("m", "").strip())
+                    row = row + 1
+
+
+
+                if currentdist ==int(todist):
+                    if not trackPar[row][column+4] is None:
+                        if value is None:  return trackPar[row][column+4]
+                        return value + trackPar[row][column+4]
+                    else:
+                        return value
+
+    except Exception as E:
+        print("Track Par Error",E,column)
+
+
+
+
+    pass
+
+
+def getMAtch(todist, toCourse, fromClass, fromdist, fromCourse, Result, trackPar, FinalRating,st,hv,awt):
     toCourse = str(toCourse).lower().strip()
     changeable = ["5", "op m", "m", "r", "nov"]
 
@@ -51,45 +202,88 @@ def getMAtch(toclass, todist, toCourse, fromClass, fromdist, fromCourse, res, tr
 
 
     for index, cl in enumerate(fromClass):
+        if not fromdist[index] is None:
+            if not str(fromCourse[index][0]).lower().strip() == "ch":
+                Result[index][1] = ""
+                nclass = str(cl).lower().replace(".0", "").replace("r","").strip()
 
-        if not str(fromCourse[index][0]).lower().strip() == "ch":
-            nclass = cl
-            res[index][1] = ""
-            if str(cl).replace(".0", "").strip().lower() in changeable and str(toclass).replace(".0",
-                                                                                                "").strip() in changeable:
-                nclass = toclass
+                if str(fromCourse[index][0]).lower().strip() == "st":
+                    fcourse = "st"
+                    fromCurrentSheet=st
+                    fromCurrentSheetValues=STDISTANCE
+                    if not str(fromCourse[index][1]).lower().strip() == "turf":
+                        fcourse = "awt"
+                        fromCurrentSheet=awt
+                        fromCurrentSheetValues = AWTDISTANCE
+                else:
+                    fcourse="hv"
+                    fromCurrentSheet=hv
+                    fromCurrentSheetValues = HVDISTANCE
 
-            if str(fromCourse[index][0]).lower().strip() == "st":
-                fcourse = "st"
-                if not str(fromCourse[index][1]).lower().strip() == "turf":
-                    fcourse = "awt"
-            else:
-                fcourse="hv"
+                if toCourse =="st":
+                    toCourseValues=STDISTANCE
+                    toCourseSheet=st
+                elif  toCourse =="hv":
+                    toCourseValues=HVDISTANCE
+                    toCourseSheet=hv
+                else:
+                    toCourseValues=AWTDISTANCE
+                    toCourseSheet=awt
 
-            try:
-                # if not toCourse == fromCourse[index]:
-                #  print(getrate(nclass,toCourse,todist,track ,False),getrate(cl,fromCourse[index],fromdist[index],track))
-                res[index][0] = round(getrate(nclass, toCourse, todist, track, False)) - round(
-                    getrate(cl, fcourse, fromdist[index], track))
 
-            # if not toCourse == fromdist[index]:
-            #     res[index][1] =  round(getrate(cl, toCourse, todist, track,False)) -round(getrate(cl, fromCourse[index], fromdist[index], track))
 
-            except Exception as e:
-                print("ww", e)
+                try:
+                    courseConversion = fcourse + " vs " + toCourse
+                    fromdist[index] = filterDistance(str(fromdist[index]))
+                    todist = filterDistance(str(todist))
+                    if FinalRating[index] is None:
+                        FinalRating[index]=0
+                    if toCourse == fcourse :
+                        if todist != fromdist[index]:
 
-            try:
-                # print(row1[index], res[index][1],"  ",row3[index],int(res[index][1]))
-                res[index][1] = round(row1[index] + res[index][0]) if round(row1[index] + res[index][0]) > 0 else "Nil"
+                            Result[index][1]=getrate(fromCurrentSheet,fromdist[index],todist,FinalRating[index])
+                            # print(toCourse, fromdist[index], todist,FinalRating[index],Result[index][1])
+                        else:
+                            Result[index][1] = FinalRating[index]
 
-            except:
-                pass
+                    else:
+                        if todist == fromdist[index]:
+                            # print(fcourse, toCourse, todist, nclass, FinalRating[index])
+                            Result[index][1] = getTrackPars(trackPar,courseConversion,todist,nclass,FinalRating[index])
+                            # print(fcourse, toCourse, todist,nclass, FinalRating[index], Result[index][1])
+                            pass
+                        else:
+                            fromdistance=filterDistance(str(fromdist[index]))
+                            try:
+                                if int(todist) in toCourseValues:
+                                    # Result[index][1] = getrate(fromCurrentSheet, fromdistance, todist, FinalRating[index])
+                                    # Result[index][1] =getTrackPars(trackPar,courseConversion,todist,nclass,Result[index][1])
+                                # else:
+                                    closestDistance =find_closest_value(toCourseValues,fromCurrentSheetValues,int(fromdistance))
+                                    Result[index][1] = getrate(fromCurrentSheet, fromdistance, int(closestDistance), FinalRating[index])
+                                    Result[index][1] = getTrackPars(trackPar, courseConversion, int(closestDistance), nclass,Result[index][1])
+                                    Result[index][1] = getrate(toCourseSheet, closestDistance, int(todist), FinalRating[index])
 
-            try:
+                            except Exception as e:
+                                print("Error in last part",e,index,fromdistance,todist,courseConversion)
 
-                res[index][2] = round(row3[index] + res[index][0]) if round(row3[index] + res[index][0]) > 0 else "Nil"
-            except:
-                pass
+
+
+                            pass
+
+
+
+                    # if not toCourse == fromCourse[index]:
+                    #  print(getrate(nclass,toCourse,todist,track ,False),getrate(cl,fromCourse[index],fromdist[index],track))
+
+
+                # if not toCourse == fromdist[index]:
+                #     res[index][1] =  round(getrate(cl, toCourse, todist, track,False)) -round(getrate(cl, fromCourse[index], fromdist[index], track))
+
+                except Exception as e:
+                    print("ww", e)
+
+
 
 
 def clearSheeets(xw):
@@ -98,7 +292,7 @@ def clearSheeets(xw):
         xw.sheets[f"r{key}"].range("A2:BJ500").clear()
 
 
-def export(sheet,horses,data,courseData,track):
+def export(sheet,horses,data,courseData,trackPar,st,hv,awt):
 
     endRow = sheet.cells(1048576, 1).end(Direction.xlUp).row
     sh =  sheet.range("A2:BJ" + str(endRow)).value
@@ -109,9 +303,10 @@ def export(sheet,horses,data,courseData,track):
         horsesrow[hors] = []
     for index,row in enumerate(sh):
         if str(row[0]).strip() in horses:
-            horsesrow[row[0]].append(index)
-            if len(horsesrow[row[0]]) > 5:
-                a = horsesrow[row[0]].pop(0)
+            if str(row[2]).lower().replace(".0","").replace("dh","").strip().isdigit():
+                horsesrow[row[0]].append(index)
+                if len(horsesrow[row[0]]) > 5:
+                    a = horsesrow[row[0]].pop(0)
 
     for key in data:
         csh2=xw.sheets[key]
@@ -145,20 +340,19 @@ def export(sheet,horses,data,courseData,track):
         try:
 
             toclass = courseData[key][0]
-            todist = courseData[key][1]
+            todist = str(courseData[key][1]).lower().replace(".0","").replace("m","").strip()
             toCourse = courseData[key][2]
 
             endRow = csh2.cells(1048576, 1).end(Direction.xlUp).row
             fromClass = csh2.range("J2:J" + str(endRow)).value
             fromdist = csh2.range("H2:H" + str(endRow)).value
             fromCourse = csh2.range("E2:F" + str(endRow)).value
-            res = csh2.range("AN2:AP" + str(endRow)).value
-            row1 = csh2.range("AH2:AH" + str(endRow)).value
-            row3 = csh2.range("AL2:AL" + str(endRow)).value
+            Result = csh2.range("AO2:AP" + str(endRow)).value
+            FinalRating = csh2.range("AL2:AL" + str(endRow)).value
 
             try:
-                getMAtch(toclass, todist, toCourse, fromClass, fromdist, fromCourse, res, track, row1, row3)
-                csh2.range("AN2:AP" + str(endRow)).value = res
+                getMAtch(todist, toCourse, fromClass, fromdist, fromCourse, Result, trackPar, FinalRating,st,hv,awt)
+                csh2.range("AO2:AP" + str(endRow)).value = Result
             except Exception as e:
                 print(e)
 
@@ -179,8 +373,11 @@ def HkPopulateClass(address,userag):
     wk = xw.Book(filename)
 
     sheet=xw.sheets["new data"]
-    track = xw.sheets["track variance"].range("A1:CT100").value
+    st = xw.sheets["st"].range("A1:W83").value
+    hv = xw.sheets["hv"].range("A1:N83").value
+    awt = xw.sheets["st awt"].range("A1:Q83").value
 
+    trackPar=xw.sheets["track pars"].range("A1:CT100").value
     clearSheeets(xw)
     counter = 2
 
@@ -203,6 +400,12 @@ def HkPopulateClass(address,userag):
             allLink = parsedWebPage.find("table", {"class": "js_racecard"}).find("tr").find_all("a",href=True)
 
             arryAnchor=[ anchor['href'] for anchor in allLink]
+            url = "https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[0])
+            r = s.get(str(url).strip(), headers={'User-Agent': userag})
+            parsedWebPage = BeautifulSoup(r.content, "html.parser")
+
+
+
             # print(arryAnchor)
         tbl = parsedWebPage.find("table", {"id": "racecardlist"}).find("table")
 
@@ -239,14 +442,14 @@ def HkPopulateClass(address,userag):
         horses=[]
 
         flag=False
-        if counter<len(arryAnchor)+1:
-            url="https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[counter-1])
+        if counter<len(arryAnchor):
+            url="https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[counter])
             print(url)
         else:
-            export(sheet, allHorses, data, courseData, track)
+            export(sheet, allHorses, data, courseData, trackPar, st, hv, awt)
             break
         counter = counter + 1
-    export(sheet,allHorses,data,courseData,track)
+    export(sheet,allHorses,data,courseData,trackPar, st, hv, awt)
 
     # clearing redundant sheet
     for i in range(1,13):

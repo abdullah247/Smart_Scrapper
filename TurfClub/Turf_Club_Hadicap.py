@@ -89,7 +89,7 @@ def export(sheet,horses,data,courseData,track,noOfHorses,csh2):
 
     endRow = sheet.cells(1048576, 1).end(Direction.xlUp).row
     sh =  sheet.range("A2:BJ" + str(endRow)).value
-
+    flag = True
     horsesrow = {}
     for hors in horses:
         horsesrow[hors] = []
@@ -152,9 +152,12 @@ def export(sheet,horses,data,courseData,track,noOfHorses,csh2):
     csh2.range("S2:S90000").number_format = "mm:ss.00"
     csh2.range("X2:X90000").number_format = "mm:ss.00"
 
-def TURFHANDICAP(ADDRESS,userag,noofhorses=5):
+def TURFHANDICAP(ADDRESS,userag,horses=""):
 
-
+    if len(horses)<1:
+        noofhorses=5
+    else:
+        noofhorses=int(horses)
 
 
 

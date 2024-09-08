@@ -7,7 +7,7 @@ from SCMP.ScmpProcess import getDates
 
 
 
-
+rowCounter=1
 
 
 class detailsData:
@@ -98,7 +98,7 @@ def getAlllreadyThere(sh,alreadyThere):
 def SCARP_SCMP(Address):
     GAMEDATES = []
     alreadyThere = []
-    rowCounter = 1
+    global rowCounter
     savecounter=0
     base="https://www.scmp.com/sport/racing/race-result/"
     url = "https://www.scmp.com/sport/racing/race-result"
