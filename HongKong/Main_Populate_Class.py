@@ -73,9 +73,11 @@ def getCoresspondingValue(currentSheet, SpeedTime, fromdist,todist,column):
         while currentDistance != todist:
             if flag:
                 column = column + 3
-                SpeedTime= AddTime(SpeedTime,currentSheet[0][column+1],flag)
+                # previous value of next column
+                SpeedTime= AddTime(SpeedTime,currentSheet[0][column-2],flag)
             else:
                 column = column - 3
+                # next value of previous column
                 SpeedTime = AddTime(SpeedTime, currentSheet[0][column + 1], flag)
             currentDistance = filterDistance(str(TopRow[column]))
 
@@ -92,7 +94,7 @@ def getCoresspondingValue(currentSheet, SpeedTime, fromdist,todist,column):
                     return currentSheet[row-1][column]
                 cval = float(cval[::-1].replace('.', '', 1)[::-1])
 
-            if cval == orginalspeedTime:
+            if cval == orginalspeedTime or row==1:
                 return currentSheet[row][column]
             else:
                 previousVal=currentSheet[row-1][column]
@@ -103,10 +105,10 @@ def getCoresspondingValue(currentSheet, SpeedTime, fromdist,todist,column):
                     return currentSheet[row + 1][column]
 
     except Exception as e:
-        print("Corresspondance Error",e,SpeedTime,row,column)
+        print("Corresspondance Error",e,SpeedTime,row,column,cval,previousVal)
     pass
 
-
+# Only gets row and column of current rating the corresponding function convert it to corresponding rate
 def getrate(currentSheet,fromdist,todist,FinalRating):
     try:
 
@@ -115,29 +117,31 @@ def getrate(currentSheet,fromdist,todist,FinalRating):
         row = 1
         TopRow=currentSheet[0]
         currentDistance = filterDistance(str(TopRow[column]))
-        while int(currentDistance) <= int(fromdist) :
-
-            # should only run if condition below is true
-            if currentDistance ==fromdist:
-                row=1
-                while row <  len(currentSheet) and not currentSheet[row][column] is None and int(currentSheet[row][column]) >int(FinalRating):
-                    row=row+1
-
-                    if row>len(currentSheet) or  currentSheet[row][column] is None:
-                        row =row-1
-                        break
 
 
-                if row<len(currentSheet):
-                    if row>1 and ((currentSheet[row-1][column] -FinalRating) < (FinalRating - currentSheet[row-1][column] )):
-                        return getCoresspondingValue(currentSheet, currentSheet[row-1][column - 1], todist, fromdist,column)
-                    else:
-                        return getCoresspondingValue(currentSheet,currentSheet[row][column-1],fromdist,todist,column)
-
+        while int(currentDistance) != int(fromdist) :
             column=column+3
             currentDistance = filterDistance(str(TopRow[column]))
             if column>len(TopRow):
                 break
+            # should only run if condition below is true
+        if currentDistance == fromdist:
+            row=1
+            while row <  len(currentSheet) and not currentSheet[row][column] is None and int(currentSheet[row][column]) >int(FinalRating):
+                row=row+1
+
+                if row>len(currentSheet) or  currentSheet[row][column] is None:
+                    row =row-1
+                    break
+
+
+        if row<len(currentSheet):
+            if row>1 and (abs(currentSheet[row-1][column] -FinalRating) < abs(FinalRating - currentSheet[row][column]) ):
+                return getCoresspondingValue(currentSheet, currentSheet[row-1][column - 1],  fromdist,todist,column)
+            else:
+                return getCoresspondingValue(currentSheet,currentSheet[row][column-1],fromdist,todist,column)
+
+
 
 
     except Exception as e:
@@ -173,8 +177,9 @@ def getTrackPars(trackPar, courseConversion, todist, cl,value:float):
                 if trackPar[row][1] is None: trackPar[row][column + 4] = 0
                 currentdist=int(str(trackPar[row][1]).lower().replace(".0", "").replace("m","").strip())
                 while currentdist != int(todist) and row<len(trackPar):
+                    row=row+1
                     currentdist = int(str(trackPar[row][1]).lower().replace(".0", "").replace("m", "").strip())
-                    row = row + 1
+
 
 
 
@@ -255,14 +260,17 @@ def getMAtch(todist, toCourse, fromClass, fromdist, fromCourse, Result, trackPar
                         else:
                             fromdistance=filterDistance(str(fromdist[index]))
                             try:
-                                if int(todist) in toCourseValues:
-                                    # Result[index][1] = getrate(fromCurrentSheet, fromdistance, todist, FinalRating[index])
-                                    # Result[index][1] =getTrackPars(trackPar,courseConversion,todist,nclass,Result[index][1])
-                                # else:
-                                    closestDistance =find_closest_value(toCourseValues,fromCurrentSheetValues,int(fromdistance))
-                                    Result[index][1] = getrate(fromCurrentSheet, fromdistance, int(closestDistance), FinalRating[index])
-                                    Result[index][1] = getTrackPars(trackPar, courseConversion, int(closestDistance), nclass,Result[index][1])
-                                    Result[index][1] = getrate(toCourseSheet, closestDistance, int(todist), FinalRating[index])
+                                if int(fromdistance) in toCourseValues:
+                                    trackAdjusted = getTrackPars(trackPar, courseConversion, int(fromdistance),nclass, FinalRating[index])
+                                    Result[index][1] = getrate(toCourseSheet, int(fromdistance), int(todist),trackAdjusted)
+                                    print(
+                                        f"RNo {index + 2} Orignal distance {fromdistance} converted value {FinalRating[index]} After track adjusted {trackAdjusted} Result {Result[index][1]}")
+                                else:
+                                    closestDistance =find_closest_value(toCourseValues,fromCurrentSheetValues,int(todist))
+                                    CONVAL = getrate(fromCurrentSheet, fromdistance, int(closestDistance), FinalRating[index])
+                                    trackAdjusted = getTrackPars(trackPar, courseConversion, int(closestDistance), nclass,CONVAL)
+                                    Result[index][1] = getrate(toCourseSheet, closestDistance, int(todist), trackAdjusted)
+
 
                             except Exception as e:
                                 print("Error in last part",e,index,fromdistance,todist,courseConversion)
@@ -379,7 +387,7 @@ def HkPopulateClass(address,userag):
 
     trackPar=xw.sheets["track pars"].range("A1:CT100").value
     clearSheeets(xw)
-    counter = 2
+
 
 
     flag=True
@@ -400,7 +408,7 @@ def HkPopulateClass(address,userag):
             allLink = parsedWebPage.find("table", {"class": "js_racecard"}).find("tr").find_all("a",href=True)
 
             arryAnchor=[ anchor['href'] for anchor in allLink]
-            url = "https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[0])
+            url = "https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[0]).split("RaceNo=")[0] + "RaceNo=" + str(counter)
             r = s.get(str(url).strip(), headers={'User-Agent': userag})
             parsedWebPage = BeautifulSoup(r.content, "html.parser")
 
@@ -442,8 +450,8 @@ def HkPopulateClass(address,userag):
         horses=[]
 
         flag=False
-        if counter<len(arryAnchor):
-            url="https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[counter])
+        if counter<len(arryAnchor)+1:
+            url="https://racing.hkjc.com/racing/information/English/racing/RaceCard.aspx" + str(arryAnchor[0]).split("RaceNo=")[0] + "RaceNo=" + str(counter+1)
             print(url)
         else:
             export(sheet, allHorses, data, courseData, trackPar, st, hv, awt)
